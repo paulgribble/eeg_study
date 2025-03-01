@@ -3,7 +3,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import math
-from utils import create_stim, create_SEP, write_binary_eeg
 import os
 from tqdm import tqdm
 from scipy import stats
