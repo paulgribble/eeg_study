@@ -19,13 +19,13 @@ def clip_SEP(stim, sep, sample_rate=5000, pre_clip=0.010, post_clip=0.090):
 	post_clip_n = int(post_clip * sample_rate) # samples
 	sep_clipped = np.zeros((n_stims, pre_clip_n + post_clip_n))
 	for i in range(n_stims):
-	    i1 = stim_up[i] - pre_clip_n
-	    i2 = stim_up[i] + post_clip_n
-	    sep_clipped[i,:] = sep[i1:i2]
+		i1 = stim_up[i] - pre_clip_n
+		i2 = stim_up[i] + post_clip_n
+		sep_clipped[i,:] = sep[i1:i2]
 	return sep_clipped, n_stims
 
 def load_group(data_dir, participant_range):
-	group_df = pd.DataFrame(columns=["participant", "n_stims", "cp3_change", "snap_change"])
+	group_df = pd.DataFrame(columns=["participant", "n_stims", "cp3_change", "snap_change", "behav_change"])
 	print(f"loading {len(participant_range)} participants from {data_dir}")
 	for i_participant in tqdm(participant_range, unit="participant"):
 		fname_prefix = data_dir + "P" + str(i_participant) + "_"
@@ -44,7 +44,10 @@ def load_group(data_dir, participant_range):
 		snap_post_c_m = np.mean(snap_post_c,0)
 		cp3_change = (np.max(cp3_post_c_m) - np.min(cp3_post_c_m)) - (np.max(cp3_pre_c_m) - np.min(cp3_pre_c_m))
 		snap_change = (np.max(snap_post_c_m) - np.min(snap_post_c_m)) - (np.max(snap_pre_c_m) - np.min(snap_pre_c_m))
-		group_df.loc[i_participant] = [i_participant, n_stims, cp3_change, snap_change]
+		beh_pre  = np.genfromtxt(fname_prefix + "sequence_times_pre.csv", delimiter=",")
+		beh_post = np.genfromtxt(fname_prefix + "sequence_times_post.csv", delimiter=",")
+		beh_change = np.mean(np.mean(beh_post,0) - np.mean(beh_pre,0))
+		group_df.loc[i_participant] = [i_participant, n_stims, cp3_change, snap_change, beh_change]
 	return group_df
 
 def plot_plus_stats(df, colname):
@@ -109,3 +112,25 @@ plt.title(f'P{i_participant} (Learning Group): CP3 Electrode')
 plt.tight_layout()
 plt.savefig("fig_cp3_timeseries.png",dpi=300)
 
+
+# EXAMPLE BEHAVIOURAL MEASURES
+#
+fig = plt.figure(figsize=(6,3))
+ax1 = fig.add_subplot(1,2,1)
+x = all_df[all_df.group=="control"].cp3_change
+y = all_df[all_df.group=="control"].behav_change
+ax1.plot(x, y, 'r.')
+r,p = stats.pearsonr(x,y)
+ax1.set_title(f"r={r:.2f}, p={p:.3f}")
+ax1.set_xlim(np.min(all_df.cp3_change)-.05, np.max(all_df.cp3_change)+.05)
+ax1.set_ylim(np.min(all_df.behav_change-1), np.max(all_df.behav_change)+1)
+ax2 = fig.add_subplot(1,2,2)
+x = all_df[all_df.group=="learning"].cp3_change
+y = all_df[all_df.group=="learning"].behav_change
+ax2.plot(x, y, 'r.')
+r,p = stats.pearsonr(x,y)
+ax2.set_title(f"r={r:.2f}, p={p:.3f}")
+ax2.set_xlim(np.min(all_df.cp3_change)-.05, np.max(all_df.cp3_change)+.05)
+ax2.set_ylim(np.min(all_df.behav_change-1), np.max(all_df.behav_change)+1)
+fig.tight_layout()
+fig.savefig("fig_beh_corr.png",dpi=300)

@@ -38,8 +38,11 @@ def create_SEP(stim, sr=5000, sep_peak=0.020, sep_period=0.010, sep_amplitude = 
     t = np.linspace(0,sep_period,math.ceil(sep_period*sr))
     sep_single = -np.sin(2*math.pi*t*(1/sep_period)) * np.hanning(math.ceil(sep_period*sr)) * sep_amplitude
     i_offset = i_stim[i] + i_peak + int(i_period/2)
+    windows = []
     while (((i_offset + i_period) < n) and (i < len(i_stim)-1)):
-        SEP[i_offset : i_offset + i_period] = sep_single
+        i1,i2 = i_offset, i_offset + i_period
+        windows.append((i1,i2))
+        SEP[i1:i2] = sep_single
         i = i + 1
         i_offset = i_stim[i] + i_peak + int(i_period/2)
     SEP += np.random.randn(len(SEP)) * noise_sd
@@ -54,7 +57,19 @@ n_participants = 15
 sample_rate    = 5000  # Hz
 raw_dir        = "raw_data"
 
-np.random.seed(9040)
+np.random.seed(7)
+
+def clip_SEP(stim, sep, sample_rate=5000, pre_clip=0.010, post_clip=0.090):
+	stim_up = np.where(np.diff(stim)==1)[0]
+	n_stims = len(stim_up)
+	pre_clip_n  = int(pre_clip * sample_rate)  # samples
+	post_clip_n = int(post_clip * sample_rate) # samples
+	sep_clipped = np.zeros((n_stims, pre_clip_n + post_clip_n))
+	for i in range(n_stims):
+		i1 = stim_up[i] - pre_clip_n
+		i2 = stim_up[i] + post_clip_n
+		sep_clipped[i,:] = sep[i1:i2]
+	return sep_clipped, n_stims
 
 def create_group(participant_list=range(15), folder_name="control_group", sep_change=0, snap_change=0):
     if not os.path.exists(folder_name):
@@ -82,12 +97,34 @@ def create_group(participant_list=range(15), folder_name="control_group", sep_ch
         write_binary_eeg(snap_post, folder_name+"/"+"P"+str(participant_num)+"_snap_post"+".bin")
         write_binary_eeg(stim     , folder_name+"/"+"P"+str(participant_num)+"_stim_pre"+".bin")
         write_binary_eeg(stim     , folder_name+"/"+"P"+str(participant_num)+"_stim_post"+".bin")
-
+        # behavioural measures: 10 x 3 pre and 10 x 3 post
+        cp3_pre_c,_  = clip_SEP(stim, cp3_pre)
+        cp3_pre_c_m  = np.mean(cp3_pre_c,0)
+        cp3_post_c,_ = clip_SEP(stim, cp3_post)
+        cp3_post_c_m = np.mean(cp3_post_c,0)
+        cp3_change = (np.max(cp3_post_c_m) - np.min(cp3_post_c_m)) - (np.max(cp3_pre_c_m) - np.min(cp3_pre_c_m))
+        participant_bias = np.random.randn()*2 + 60
+        with open(folder_name+"/"+"P"+str(participant_num)+"_sequence_times_pre"+".csv", "w") as fid:
+            for i in range(10):
+                seq1 = participant_bias + 5 + np.random.randn()*8
+                seq2 = participant_bias - 5 + np.random.randn()*8
+                seq3 = participant_bias + 0 + np.random.randn()*8
+                fid.write(f"{seq1:.3f},{seq2:.3f},{seq3:.3f}\n")
+        if (folder_name=="raw_data/learning_group"):
+            slope = cp3_change
+        else:
+            slope = 0
+        with open(folder_name+"/"+"P"+str(participant_num)+"_sequence_times_post"+".csv", "w") as fid:
+            for i in range(10):
+                seq1 = participant_bias - (slope)*11  + 5 + np.random.randn()*8
+                seq2 = participant_bias - (slope)*15  - 5 + np.random.randn()*8
+                seq3 = participant_bias - (slope)*12  + 0 + np.random.randn()*8
+                fid.write(f"{seq1:.3f},{seq2:.3f},{seq3:.3f}\n")
 
 # create control group
 create_group(range(0 ,15), "raw_data/control_group", sep_change=0, snap_change=0)
 
 # create learning group
-create_group(range(15,30), "raw_data/learning_group", sep_change=0.07, snap_change=0)
+create_group(range(15,30), "raw_data/learning_group", sep_change=0.12, snap_change=0)
 
 
