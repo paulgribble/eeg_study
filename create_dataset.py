@@ -28,22 +28,20 @@ def create_stim(dur=120, sr=5000, pulse_width=0.001, pulse_freq=3):
         i = i + freq_step
     return stim
 
-def create_SEP(stim, sr=5000, sep_peak=0.020, sep_period=0.008, sep_amplitude = 1.0, jitter_onset=0, noise_sd=0):
+def create_SEP(stim, sr=5000, sep_peak=0.020, sep_period=0.010, sep_amplitude = 1.0, noise_sd=0):
     n = np.shape(stim)[0]
     i_stim = np.where(np.diff(stim)==1)[0]
-    i = 0 # starting stim
+    i = 0   # starting stim
     i_peak = math.ceil(sep_peak * sr)
     i_period = math.ceil(sep_period * sr)
     SEP = np.zeros((n,))
     t = np.linspace(0,sep_period,math.ceil(sep_period*sr))
     sep_single = -np.sin(2*math.pi*t*(1/sep_period)) * np.hanning(math.ceil(sep_period*sr)) * sep_amplitude
-    i_offset = i_stim[i] + i_peak - math.ceil(i_period/4)
-    if jitter_onset !=0:
-        i_offset += np.random.randint(-jitter_onset,jitter_onset)
+    i_offset = i_stim[i] + i_peak + int(i_period/2)
     while (((i_offset + i_period) < n) and (i < len(i_stim)-1)):
         SEP[i_offset : i_offset + i_period] = sep_single
         i = i + 1
-        i_offset = i_stim[i] + i_peak - math.ceil(i_period/4)
+        i_offset = i_stim[i] + i_peak + int(i_period/2)
     SEP += np.random.randn(len(SEP)) * noise_sd
     return SEP
 
@@ -56,70 +54,40 @@ n_participants = 15
 sample_rate    = 5000  # Hz
 raw_dir        = "raw_data"
 
-np.random.seed(5)
+np.random.seed(9040)
 
-if not os.path.exists(raw_dir):
-    print(f"creating directory {raw_dir}")
-    os.makedirs(raw_dir)
-if not os.path.exists(raw_dir+"/control_group"):
-    print(f"creating directory {raw_dir+"/control_group"}")
-    os.makedirs(raw_dir+"/control_group")
-if not os.path.exists(raw_dir+"/learning_group"):
-    print(f"creating directory {raw_dir+"/learning_group"}")
-    os.makedirs(raw_dir+"/learning_group")
-
-# control group
-# no difference pre vs post
-#
-print(f"Generating {n_participants} participants in the control group...")
-for i_participant in tqdm(range(n_participants), unit="participant"):
-    sep_change  = 0   # pre to post change
-    snap_change = 0   # pre to post change
-    sep_ampl    = 1.0 + np.random.randn() * 0   # pre amplitude + across-participant variability
-    snap_ampl   = 4.0 + np.random.randn() * 0   # pre amplitude + across-participant variability
-    sep_noise   = 0.3 # within-participant variability
-    snap_noise  = 0.3 # within-participant variability
-    trial_duration = 120 + np.random.randint(-5,5)
-    participant_num = i_participant
-    stim = create_stim(dur=trial_duration, sr=sample_rate, pulse_width=0.001, pulse_freq=3)
-    cp3_pre   = create_SEP(stim, sep_peak=0.020, sep_period=0.008, sep_amplitude=sep_ampl, jitter_onset=2, noise_sd=sep_noise)
-    write_binary_eeg(cp3_pre, raw_dir+"/control_group/"+"P"+str(participant_num)+"_cp3_pre"+".bin")
-    cp3_post  = create_SEP(stim, sep_peak=0.020, sep_period=0.008, sep_amplitude=sep_ampl + sep_change, jitter_onset=2, noise_sd=sep_noise)
-    write_binary_eeg(cp3_post, raw_dir+"/control_group/"+"P"+str(participant_num)+"_cp3_post"+".bin")
-    snap_pre  = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_ampl, jitter_onset=0, noise_sd=snap_noise)
-    write_binary_eeg(snap_pre, raw_dir+"/control_group/"+"P"+str(participant_num)+"_snap_pre"+".bin")
-    snap_post = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_ampl + snap_change, jitter_onset=0, noise_sd=snap_noise)
-    write_binary_eeg(snap_post, raw_dir+"/control_group/"+"P"+str(participant_num)+"_snap_post"+".bin")
-    write_binary_eeg(stim, raw_dir+"/control_group/"+"P"+str(participant_num)+"_stim_pre"+".bin")
-    write_binary_eeg(stim, raw_dir+"/control_group/"+"P"+str(participant_num)+"_stim_post"+".bin")
-
-# learning group
-# yes difference pre vs post
-#
-print(f"Generating {n_participants} participants in the learning group...")
-for i_participant in tqdm(range(n_participants), unit="participant"):
-    sep_change  = 0.05 # pre to post change
-    snap_change = 0   # pre to post change
-    sep_ampl    = 1.0 + np.random.randn() * 0   # pre amplitude + across-participant variability
-    snap_ampl   = 4.0 + np.random.randn() * 0   # pre amplitude + across-participant variability
-    sep_noise   = 0.7 # within-participant variability
-    snap_noise  = 0.7 # within-participant variability
-    trial_duration = 120 + np.random.randint(-5,5)
-    participant_num = i_participant + n_participants
-    stim = create_stim(dur=trial_duration, sr=sample_rate, pulse_width=0.001, pulse_freq=3)
-    cp3_pre   = create_SEP(stim, sep_peak=0.020, sep_period=0.008, sep_amplitude=sep_ampl, jitter_onset=2, noise_sd=sep_noise)
-    write_binary_eeg(cp3_pre, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_cp3_pre"+".bin")
-    cp3_post  = create_SEP(stim, sep_peak=0.020, sep_period=0.008, sep_amplitude=sep_ampl + sep_change, jitter_onset=2, noise_sd=sep_noise)
-    write_binary_eeg(cp3_post, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_cp3_post"+".bin")
-    snap_pre  = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_ampl, jitter_onset=0, noise_sd=snap_noise)
-    write_binary_eeg(snap_pre, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_snap_pre"+".bin")
-    snap_post = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_ampl + snap_change, jitter_onset=0, noise_sd=snap_noise)
-    write_binary_eeg(snap_post, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_snap_post"+".bin")
-    write_binary_eeg(stim, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_stim_pre"+".bin")
-    write_binary_eeg(stim, raw_dir+"/learning_group/"+"P"+str(participant_num)+"_stim_post"+".bin")
+def create_group(participant_list=range(15), folder_name="control_group", sep_change=0, snap_change=0):
+    if not os.path.exists(folder_name):
+        print(f"creating directory {folder_name}")
+        os.makedirs(folder_name)
+    print(f"Generating {n_participants} participants in folder {folder_name} ...")
+    for participant_num in tqdm(participant_list, unit="participant"):
+        sep_change  = sep_change  + np.random.randn() * 0.0   # pre to post change
+        snap_change = snap_change + np.random.randn() * 0.0   # pre to post change
+        sep_pre     = 1.0 + np.random.randn() * 0.0
+        snap_pre    = 4.0 + np.random.randn() * 0.0
+        sep_post    = sep_pre  + sep_change 
+        snap_post   = snap_pre + snap_change
+        sep_noise   = 1.5   # signal noise
+        snap_noise  = 1.5   # signal noise
+        trial_duration = 120 + np.random.randint(-5,5)
+        stim = create_stim(dur=trial_duration, sr=sample_rate, pulse_width=0.001, pulse_freq=3)
+        cp3_pre   = create_SEP(stim, sep_peak=0.020, sep_period=0.012, sep_amplitude=sep_pre  , noise_sd=sep_noise)
+        cp3_post  = create_SEP(stim, sep_peak=0.020, sep_period=0.012, sep_amplitude=sep_post , noise_sd=sep_noise)
+        snap_pre  = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_pre , noise_sd=snap_noise)
+        snap_post = create_SEP(stim, sep_peak=0.005, sep_period=0.003, sep_amplitude=snap_post, noise_sd=snap_noise)
+        write_binary_eeg(cp3_pre  , folder_name+"/"+"P"+str(participant_num)+"_cp3_pre"+".bin")
+        write_binary_eeg(cp3_post , folder_name+"/"+"P"+str(participant_num)+"_cp3_post"+".bin")
+        write_binary_eeg(snap_pre , folder_name+"/"+"P"+str(participant_num)+"_snap_pre"+".bin")
+        write_binary_eeg(snap_post, folder_name+"/"+"P"+str(participant_num)+"_snap_post"+".bin")
+        write_binary_eeg(stim     , folder_name+"/"+"P"+str(participant_num)+"_stim_pre"+".bin")
+        write_binary_eeg(stim     , folder_name+"/"+"P"+str(participant_num)+"_stim_post"+".bin")
 
 
+# create control group
+create_group(range(0 ,15), "raw_data/control_group", sep_change=0, snap_change=0)
 
-
+# create learning group
+create_group(range(15,30), "raw_data/learning_group", sep_change=0.07, snap_change=0)
 
 

@@ -48,7 +48,7 @@ def load_group(data_dir, participant_range):
 	return group_df
 
 def plot_plus_stats(df, colname):
-	fig = plt.figure(figsize=(4, 6))
+	fig = plt.figure(figsize=(2, 6))
 	sns.boxplot(x='group', y=colname, data=df, 
 				width=0.3, fliersize=0, color='lightgray', showmeans=True)
 	sns.violinplot(x='group', y=colname, data=df, 
@@ -69,14 +69,43 @@ def plot_plus_stats(df, colname):
 	return fig
 
 
+# SUMMARY FIGURES
+#
 control_df = load_group("raw_data/control_group/", range(0,15))
 control_df["group"] = "control"
 learning_df = load_group("raw_data/learning_group/", range(15,30))
 learning_df["group"] = "learning"
 all_df = pd.concat([control_df, learning_df], ignore_index=True)
-
+#
 fig_cp3 = plot_plus_stats(all_df, "cp3_change")
 fig_snap = plot_plus_stats(all_df, "snap_change")
+fig_cp3.set_figwidth(4)
+fig_cp3.set_figheight(6)
+fig_cp3.tight_layout()
+fig_cp3.savefig("fig_cp3_summary.png",dpi=300)
 
-
+# EXAMPLE TIMESERIES FIGURE
+#
+data_dir = "raw_data/learning_group/"
+i_participant = 17
+fname_prefix = data_dir + "P" + str(i_participant) + "_"
+stim      = read_binary_eeg(fname_prefix + "stim_pre.bin")
+cp3_pre   = read_binary_eeg(fname_prefix + "cp3_pre.bin")
+cp3_post  = read_binary_eeg(fname_prefix + "cp3_post.bin")
+cp3_pre_c, n_stims   = clip_SEP(stim, cp3_pre)
+cp3_post_c, n_stims  = clip_SEP(stim, cp3_post)
+cp3_pre_c_m = np.mean(cp3_pre_c,0)
+cp3_post_c_m = np.mean(cp3_post_c,0)
+t = (np.arange(np.shape(cp3_pre_c_m)[0]) / 5000) - 0.020
+#
+plt.figure(figsize=(10,3))
+plt.plot(t, cp3_post_c_m,'r-',label="POST")
+plt.plot(t, cp3_pre_c_m,'b-',label="PRE")
+plt.plot([0,0],[-1,1],'k-')
+plt.legend()
+plt.xlabel('TIME (s)')
+plt.ylabel('EVOKED RESPONSE')
+plt.title(f'P{i_participant} (Learning Group): CP3 Electrode')
+plt.tight_layout()
+plt.savefig("fig_cp3_timeseries.png",dpi=300)
 
