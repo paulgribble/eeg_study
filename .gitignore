@@ -3,3 +3,4 @@
 __pycache__/
 raw_data/
 raw_data.zip
+processed_data/
