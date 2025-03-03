@@ -25,7 +25,7 @@ def clip_SEP(stim, sep, sample_rate=5000, pre_clip=0.010, post_clip=0.090):
 	return sep_clipped, n_stims
 
 def load_group(data_dir, participant_range):
-	group_df = pd.DataFrame(columns=["participant", "n_stims", "cp3_change", "snap_change", "behav_change"])
+	group_df = pd.DataFrame(columns=["participant", "n_stims", "cp3_pre", "cp3_post", "cp3_change", "snap_pre", "snap_post", "snap_change", "behav_pre", "behav_post", "behav_change"])
 	print(f"loading {len(participant_range)} participants from {data_dir}")
 	for i_participant in tqdm(participant_range, unit="participant"):
 		fname_prefix = data_dir + "P" + str(i_participant) + "_"
@@ -42,12 +42,18 @@ def load_group(data_dir, participant_range):
 		cp3_post_c_m = np.mean(cp3_post_c,0)
 		snap_pre_c_m = np.mean(snap_pre_c,0)
 		snap_post_c_m = np.mean(snap_post_c,0)
-		cp3_change = (np.max(cp3_post_c_m) - np.min(cp3_post_c_m)) - (np.max(cp3_pre_c_m) - np.min(cp3_pre_c_m))
-		snap_change = (np.max(snap_post_c_m) - np.min(snap_post_c_m)) - (np.max(snap_pre_c_m) - np.min(snap_pre_c_m))
+		cp3_pre_pp = (np.max(cp3_pre_c_m) - np.min(cp3_pre_c_m))
+		cp3_post_pp = (np.max(cp3_post_c_m) - np.min(cp3_post_c_m))
+		cp3_change = cp3_post_pp - cp3_pre_pp
+		snap_pre_pp = (np.max(snap_pre_c_m) - np.min(snap_pre_c_m))
+		snap_post_pp = (np.max(snap_post_c_m) - np.min(snap_post_c_m))
+		snap_change = snap_post_pp - snap_pre_pp
 		beh_pre  = np.genfromtxt(fname_prefix + "sequence_times_pre.csv", delimiter=",")
+		beh_pre = np.mean(np.mean(beh_pre,0))
 		beh_post = np.genfromtxt(fname_prefix + "sequence_times_post.csv", delimiter=",")
-		beh_change = np.mean(np.mean(beh_post,0) - np.mean(beh_pre,0))
-		group_df.loc[i_participant] = [i_participant, n_stims, cp3_change, snap_change, beh_change]
+		beh_post = np.mean(np.mean(beh_post,0))
+		beh_change = beh_post - beh_pre
+		group_df.loc[i_participant] = [i_participant, n_stims, cp3_pre_pp, cp3_post_pp, cp3_change, snap_pre_pp, snap_post_pp, snap_change, beh_pre, beh_post, beh_change]
 	return group_df
 
 def plot_plus_stats(df, colname):
@@ -64,6 +70,7 @@ def plot_plus_stats(df, colname):
 	plt.tight_layout()
 	plt.show()
 	result = stats.ttest_1samp(df[colname][df.group=="control"], 0)
+	print(f"STATS: {colname}")
 	print(f"control vs zero: t({result.df})={result.statistic:.5f}, p={result.pvalue:.5f}")
 	result = stats.ttest_1samp(df[colname][df.group=="learning"], 0)
 	print(f"learning vs zero: t({result.df})={result.statistic:.5f}, p={result.pvalue:.5f}")
@@ -99,7 +106,7 @@ cp3_pre_c, n_stims   = clip_SEP(stim, cp3_pre)
 cp3_post_c, n_stims  = clip_SEP(stim, cp3_post)
 cp3_pre_c_m = np.mean(cp3_pre_c,0)
 cp3_post_c_m = np.mean(cp3_post_c,0)
-t = (np.arange(np.shape(cp3_pre_c_m)[0]) / 5000) - 0.020
+t = (np.arange(np.shape(cp3_pre_c_m)[0]) / 5000) - 0.010
 #
 plt.figure(figsize=(10,3))
 plt.plot(t, cp3_post_c_m,'r-',label="POST")

@@ -37,14 +37,14 @@ def create_SEP(stim, sr=5000, sep_peak=0.020, sep_period=0.010, sep_amplitude = 
     SEP = np.zeros((n,))
     t = np.linspace(0,sep_period,math.ceil(sep_period*sr))
     sep_single = -np.sin(2*math.pi*t*(1/sep_period)) * np.hanning(math.ceil(sep_period*sr)) * sep_amplitude
-    i_offset = i_stim[i] + i_peak + int(i_period/2)
+    i_offset = i_stim[i] + i_peak - int(i_period/4)
     windows = []
     while (((i_offset + i_period) < n) and (i < len(i_stim)-1)):
         i1,i2 = i_offset, i_offset + i_period
         windows.append((i1,i2))
         SEP[i1:i2] = sep_single
         i = i + 1
-        i_offset = i_stim[i] + i_peak + int(i_period/2)
+        i_offset = i_stim[i] + i_peak - int(i_period/4)
     SEP += np.random.randn(len(SEP)) * noise_sd
     return SEP
 
