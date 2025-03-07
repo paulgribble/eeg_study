@@ -13,7 +13,7 @@ def read_binary_eeg(fname):
     return data
 
 def clip_SEP(stim, sep, sample_rate=5000, pre_clip=0.010, post_clip=0.090):
-	stim_up = np.where(np.diff(stim)==1)[0]
+	stim_up = np.where(np.diff(stim)==1)[0] + 1
 	n_stims = len(stim_up)
 	pre_clip_n  = int(pre_clip * sample_rate)  # samples
 	post_clip_n = int(post_clip * sample_rate) # samples
