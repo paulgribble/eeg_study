@@ -89,7 +89,7 @@ def process_participant(participant, raw_folder, processed_folder):
 	ax3.set_ylabel('TIME (s)')
 	ax3.set_xlabel('GROUP')
 	fig.savefig(f"{processed_folder}/{participant}.png",dpi=300)
-
+	plt.close(fig)
 
 
 # PROCESS THE DATA!
