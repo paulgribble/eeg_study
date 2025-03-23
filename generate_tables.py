@@ -33,4 +33,7 @@ rows_learning = get_rows(range(15,30), "learning")
 
 summary_table = pd.DataFrame(rows_control + rows_learning)
 
-summary_table.to_csv("processed_data/summary_table.csv", sep=",")
+if not os.path.exists("tables"):
+    os.makedirs("tables")
+
+summary_table.to_csv("tables/summary_table.csv", sep=",")

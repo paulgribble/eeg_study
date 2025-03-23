@@ -8,4 +8,22 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+To generate the raw data:
+
+```{shell}
+python3 create_dataset.py
+```
+
+To go from raw data to processed data:
+
+```{shell}
+python3 process_data.py
+```
+
+To go from processed data to the summary table `summary_table.csv`:
+
+```{shell}
+python3 generate_tables.py
+```
+
 
