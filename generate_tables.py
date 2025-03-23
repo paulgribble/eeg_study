@@ -36,4 +36,4 @@ summary_table = pd.DataFrame(rows_control + rows_learning)
 if not os.path.exists("tables"):
     os.makedirs("tables")
 
-summary_table.to_csv("tables/summary_table.csv", sep=",")
+summary_table.to_csv("tables/summary_table.csv", sep=",", float_format='%g')
