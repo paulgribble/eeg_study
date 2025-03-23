@@ -49,12 +49,12 @@ def process_participant(participant, raw_folder, processed_folder):
 	cp3  = np.vstack((cp3_pre_sliced_m, cp3_post_sliced_m)).T
 	snap = np.vstack((snap_pre_sliced_m, snap_post_sliced_m)).T
 	signals = np.hstack((cp3,snap))
-	np.savetxt(processed_folder+"/"+participant+"_signals.csv" , signals , delimiter=",", header="cp3_pre,cp3_post,snap_pre,snap_post")
+	np.savetxt(processed_folder+"/"+participant+"_signals.csv" , signals , delimiter=",", header="cp3_pre,cp3_post,snap_pre,snap_post", comments='')
 	# behavioural .csv data files
 	behav_pre  = np.genfromtxt(raw_folder+"/"+participant+"_sequence_times_pre.csv", delimiter=",")
 	behav_post = np.genfromtxt(raw_folder+"/"+participant+"_sequence_times_post.csv", delimiter=",")
 	behav = np.hstack((behav_pre, behav_post))
-	np.savetxt(processed_folder+"/"+participant+"_behaviour.csv", behav, delimiter=",", header="sequence1_pre, sequence2_pre, sequence3_pre, sequence1_post, sequence2_post, sequence3_post")
+	np.savetxt(processed_folder+"/"+participant+"_behaviour.csv", behav, delimiter=",", header="sequence1_pre, sequence2_pre, sequence3_pre, sequence1_post, sequence2_post, sequence3_post", comments='')
 	# make a figure
 	fig = plt.figure(layout="constrained", figsize=(10,6))
 	gs = GridSpec(2,3, figure=fig)
@@ -94,9 +94,10 @@ def process_participant(participant, raw_folder, processed_folder):
 
 # PROCESS THE DATA!
 
-for i in tqdm(range(0, 15), unit="participant"):
+for i in tqdm(range(0, 15), unit=" participant "):
 	process_participant("P"+str(i), "raw_data/control_group", "processed_data/control_group")
-for i in tqdm(range(15,30), unit="participant"):
+
+for i in tqdm(range(15,30), unit=" participant "):
 	process_participant("P"+str(i), "raw_data/learning_group", "processed_data/learning_group")
 
 
