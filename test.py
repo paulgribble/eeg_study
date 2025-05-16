@@ -6,6 +6,7 @@ import math
 import os
 from tqdm import tqdm
 from scipy import stats
+import plotconfig # custom plotting style
 
 def read_binary_eeg(fname):
     with open(fname, 'rb') as f:
